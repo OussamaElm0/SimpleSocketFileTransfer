@@ -35,7 +35,7 @@ int main()
 	printf("%s\n", message);
 
 	printf("Enter the message :");
-	scanf(" %[^\n]", &message);
+	fgets(message, 1024, stdin);
 	printf("%s", message);
 	write(sk, message, strlen(message));
 
