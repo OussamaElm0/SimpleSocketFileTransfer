@@ -43,18 +43,39 @@ int main() {
         }
         
         clientsCount++;
-        printf("Client %d connected.\n", clientsCount);
+        printf("-------------------------------\n");
+        printf("%d client(s) connected.\n", clientsCount);
+        printf("-------------------------------\n");
 
-        char* message_2_send = "Hello! We're glad to meet you.";
+        char message_2_send[1024] = "Hello! We're glad to meet you.";
         write(client, message_2_send, strlen(message_2_send));
 
         char message[1024] = {0};
-    
-        read(client, message, sizeof(message) - 1);
-        printf("New message received: %s\n", message);
+        while (1) {
+            memset(message, 0, sizeof(message));
+            read(client, message, sizeof(message) - 1);
+            // message[sizeof(message) - 1] = '\0';
+
+            if (strcmp(message, "q") == 0){
+                printf("-------------------------------\n");
+                printf("1 client disconected\n");
+                printf("-------------------------------\n");
+                break;
+            }
+
+            printf("New message received: %s\n", message);
+
+            printf("Enter your response : ");
+            fgets(message_2_send, sizeof(message_2_send), stdin);
+            message_2_send[strcspn(message_2_send, "\n")] = 0;  // Remove the newline character
+
+            write(client, message_2_send, strlen(message_2_send));
+            printf("-------------------------------\n");
+        }
 
         close(client);
         clientsCount--;
+
     }
 
     close(sk);
