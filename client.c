@@ -38,7 +38,6 @@ int main()
 
 		memset(message, 0, sizeof(message));
 		
-		printf("%d\n", strcmp("d", "d"));
 		printf("Enter the message :");
 		fgets(message, sizeof(message), stdin);
 		message[strcspn(message, "\n")] = 0;  // Remove the newline character
@@ -51,7 +50,6 @@ int main()
 			break;
 		}else if (strcmp(message, "/file") == 0){
 			while(1){
-				printf("|||||||||||||||||||\n");
 				message[read(sk, message, sizeof(message))] = '\0';  // Null-terminate the string
 				
 				if(strcmp(message, "d") == 0){
@@ -63,6 +61,9 @@ int main()
 				}
 			}
 			printf("File was closed\n");
+		} else {
+			read(sk, message, sizeof(message));
+			printf("========> %s <========\n", message);
 		}
 	}
 
@@ -73,7 +74,6 @@ void writeOnFile(char * message){
 	FILE *fp = fopen("./files/received_file.txt", "a");
 
 	fprintf(fp, "%s", message);
-	printf("%s with size : %ld\n", message, sizeof(message));
 
 	fclose(fp);
 }
