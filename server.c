@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-void sendFileContent(int client);
+int getAvailableFiles();
 
 int main() {
     int sk = socket(AF_INET, SOCK_STREAM, 0);
@@ -53,13 +53,13 @@ int main() {
             while (1) {
                 read(client, message, sizeof(message) - 1);
 
-                if (strcmp(message, "q") == 0){
+                if (strcmp(message, "/exit") == 0){
                     printf("-------------------------------\n");
                     printf("1 client disconected\n");
                     printf("-------------------------------\n");
                     break;
                 }else if (strcmp(message, "/file") == 0){
-                    FILE *fp = fopen("./files/test.txt", "r");
+                    FILE *fp = fopen("./files_2_send/test1.txt", "r");
 
                     char line[255];
 

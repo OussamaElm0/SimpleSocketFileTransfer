@@ -6,6 +6,7 @@
 #include <string.h>
 
 void writeOnFile(char *message);
+void getMenuOptions();
 
 int main()
 {
@@ -34,8 +35,7 @@ int main()
 
 	char message[1024];
 	while(1) {	
-		printf("To get a file enter : /file\n");
-
+		getMenuOptions();
 		memset(message, 0, sizeof(message));
 		
 		printf("Enter the message :");
@@ -46,7 +46,7 @@ int main()
 		printf("Your message was sent successfully\n");
 
 
-		if(strcmp(message, "q") == 0){
+		if(strcmp(message, "/exit") == 0){
 			break;
 		}else if (strcmp(message, "/file") == 0){
 			while(1){
@@ -61,7 +61,10 @@ int main()
 				}
 			}
 			printf("File was closed\n");
-		} else {
+		} else if (strcmp(message, "/list")){
+			message[read(sk, message, sizeof(message))] = '\0';  // Null-terminate the string
+			printf("%s\n", message);
+         } else {
 			read(sk, message, sizeof(message));
 			printf("========> %s <========\n", message);
 		}
@@ -70,8 +73,16 @@ int main()
 	return 0;
 }
 
+void getMenuOptions(){
+	printf("=====================================================\n");
+	printf("Select one of those commands :\n");
+	printf("/file ===========> To get a file.\n");
+	printf("/exit ===========> To exit the session.\n");
+	printf("=====================================================\n");
+}
+
 void writeOnFile(char * message){
-	FILE *fp = fopen("./files/received_file.txt", "a");
+	FILE *fp = fopen("./received_files/file1.txt", "a");
 
 	fprintf(fp, "%s", message);
 
