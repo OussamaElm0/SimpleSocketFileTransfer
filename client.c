@@ -1,11 +1,12 @@
 #include <stdio.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
-void writeOnFile(const char *message);
+#define PORT 8880
+
 void getMenuOptions();
 
 int main() {
@@ -17,7 +18,7 @@ int main() {
 
     struct sockaddr_in adresse;
     adresse.sin_family = AF_INET;
-    adresse.sin_port = htons(8880);  // Use htons for the port
+    adresse.sin_port = htons(PORT);  // Use htons for the port
     adresse.sin_addr.s_addr = INADDR_ANY;
 
     if (connect(sk, (struct sockaddr *)&adresse, sizeof(adresse)) < 0) {
@@ -26,8 +27,7 @@ int main() {
         return 1;
     }
 
-    printf("You're now connected!\n");
-    printf("-------------------------------\n");
+    printf("You're now connected to the server!\n");
 
     char message[1024];
     while (1) {
@@ -43,8 +43,8 @@ int main() {
 
         if (strcmp(message, "/exit") == 0) {
             break;
-        } else if (strcmp(message, "/file") == 0) {
-            FILE *fp = fopen("./received_files/file1.txt", "w");
+        } else if (strcmp(message, "/download") == 0) {
+            FILE *fp = fopen("./client_files/test", "w");
             if (!fp) {
                 perror("File open error");
                 continue;
@@ -71,10 +71,30 @@ int main() {
 
             fclose(fp);
             printf("File was closed\n");
-        } else {
-            recv(sk, message, sizeof(message) - 1, 0);
-            message[recv(sk, message, sizeof(message), 0)] = '\0';
-            printf("========> %s <========\n", message);
+        } else if (strcmp(message, "/upload") == 0) {
+		    char file_name[50];
+		    printf("Enter the file name to upload: ");
+		    fgets(file_name, sizeof(file_name), stdin);
+		    file_name[strcspn(file_name, "\n")] = 0;
+
+		    FILE *fp = fopen(file_name, "r");
+		    if (fp == NULL) {
+		        perror("File not found");
+		    } else {
+		        send(sk, file_name, 50, 0);  // Send file name
+		        char line[255];
+		        while (fgets(line, 255, fp) != NULL) {
+		            send(sk, line, strlen(line), 0);  // Send each line
+		        }
+		        const char *eof_signal = "EOF_SIGNAL";
+		        send(sk, eof_signal, strlen(eof_signal), 0);  // Send EOF_SIGNAL to indicate the end
+		        printf("File was uploaded successfully!\n");
+		        fclose(fp);
+		    }
+		} else {
+            int bytes_received = recv(sk, message, sizeof(message), 0);
+            message[bytes_received] = '\0';
+            printf("Server response: %s\n", message);
         }
     }
 
@@ -85,7 +105,8 @@ int main() {
 void getMenuOptions() {
     printf("=====================================================\n");
     printf("Select one of these commands:\n");
-    printf("/file ===========> To get a file.\n");
+    printf("/download ===========> To get a file.\n");
+    printf("/upload ===========> To send a file.\n");
     printf("/exit ===========> To exit the session.\n");
     printf("=====================================================\n");
 }
