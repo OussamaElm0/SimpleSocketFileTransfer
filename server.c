@@ -35,10 +35,10 @@ int main() {
 
     socklen_t addrlen = sizeof(adresse);
     while(1){
+        int client = accept(sk, (struct sockaddr *) &adresse, &addrlen);
         int processusType = fork(); // Parent or Children
 
-        // if(processusType == 0){
-            int client = accept(sk, (struct sockaddr *) &adresse, &addrlen);
+        if(processusType == 0){
             if (client < 0) {
                 perror("Accept error");
                 close(sk);
@@ -51,7 +51,8 @@ int main() {
 
             char message[1024] = {0};
             while (1) {
-                read(client, message, sizeof(message) - 1);
+                memset(message, 0, sizeof(message));
+                recv(client, message, sizeof(message) - 1, 0);
 
                 if (strcmp(message, "/exit") == 0){
                     printf("-------------------------------\n");
@@ -65,18 +66,18 @@ int main() {
 
                     printf("The sending start;\n");
                     while (fgets(line, 255, fp) != NULL){
-                        write(client, line, strlen(line));
-                        printf("%s\n", line);
+                        send(client, line, strlen(line), 0);
+                        printf("%s", line);
                     }
                     printf("-------------------------------\n");
 
                     const char *eofSignal = "d";
-                    write(client, eofSignal, strlen(eofSignal));
+                    send(client, eofSignal, strlen(eofSignal),0);
                     fclose(fp);
                     printf("The file was sent successfully.\n");
                 } else {
                     strcpy(message, "Option not found!");
-                    write(client, message, strlen(message));
+                    send(client, message, strlen(message), 0);
                 }
 
 
@@ -86,9 +87,9 @@ int main() {
             }
 
             close(client);    
-        // } else {
-        //     continue;
-        // }
+        } else {
+            continue;
+        }
     }
 
     close(sk);

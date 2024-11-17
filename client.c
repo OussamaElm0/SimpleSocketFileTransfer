@@ -42,7 +42,7 @@ int main()
 		fgets(message, sizeof(message), stdin);
 		message[strcspn(message, "\n")] = 0;  // Remove the newline character
 
-		write(sk, message, strlen(message));
+		send(sk, message, strlen(message),0);
 		printf("Your message was sent successfully\n");
 
 
@@ -50,7 +50,7 @@ int main()
 			break;
 		}else if (strcmp(message, "/file") == 0){
 			while(1){
-				message[read(sk, message, sizeof(message))] = '\0';  // Null-terminate the string
+				message[recv(sk, message, sizeof(message), 0)] = '\0';  // Null-terminate the string
 				
 				if(strcmp(message, "d") == 0){
 					printf("File transfer completed!\n");
@@ -61,11 +61,8 @@ int main()
 				}
 			}
 			printf("File was closed\n");
-		} else if (strcmp(message, "/list")){
-			message[read(sk, message, sizeof(message))] = '\0';  // Null-terminate the string
-			printf("%s\n", message);
-         } else {
-			read(sk, message, sizeof(message));
+		} else {
+			recv(sk, message, sizeof(message), 0);
 			printf("========> %s <========\n", message);
 		}
 	}
