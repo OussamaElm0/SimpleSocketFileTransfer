@@ -5,83 +5,87 @@
 #include <stdbool.h>
 #include <string.h>
 
-void writeOnFile(char *message);
+void writeOnFile(const char *message);
 void getMenuOptions();
 
-int main()
-{
-	int sk = socket(AF_INET, SOCK_STREAM, 0);
+int main() {
+    int sk = socket(AF_INET, SOCK_STREAM, 0);
+    if (sk < 0) {
+        perror("Socket creation error");
+        return 1;
+    }
 
-	if (sk < 0){
-		printf("There is an error in the socket\n");
-		return 0;
-	}
+    struct sockaddr_in adresse;
+    adresse.sin_family = AF_INET;
+    adresse.sin_port = htons(8880);  // Use htons for the port
+    adresse.sin_addr.s_addr = INADDR_ANY;
 
-	struct sockaddr_in adresse;
+    if (connect(sk, (struct sockaddr *)&adresse, sizeof(adresse)) < 0) {
+        perror("Connection error");
+        close(sk);
+        return 1;
+    }
 
-	adresse.sin_family = AF_INET;
-	adresse.sin_port = 8880;
-	adresse.sin_addr.s_addr = INADDR_ANY;
+    printf("You're now connected!\n");
+    printf("-------------------------------\n");
 
-	int cn = connect(sk, (struct sockaddr *) &adresse, sizeof(adresse));
+    char message[1024];
+    while (1) {
+        getMenuOptions();
+        memset(message, 0, sizeof(message));
 
-	if (cn < 0){
-		printf("Connot connect, there is an error within the socket!\n");
-		return 0;
-	}
+        printf("Enter the message: ");
+        fgets(message, sizeof(message), stdin);
+        message[strcspn(message, "\n")] = 0;  // Remove newline character
 
-	printf("You're now connected!\n");
-	printf("-------------------------------\n");
+        send(sk, message, strlen(message), 0);
+        printf("Your message was sent successfully\n");
 
-	char message[1024];
-	while(1) {	
-		getMenuOptions();
-		memset(message, 0, sizeof(message));
-		
-		printf("Enter the message :");
-		fgets(message, sizeof(message), stdin);
-		message[strcspn(message, "\n")] = 0;  // Remove the newline character
+        if (strcmp(message, "/exit") == 0) {
+            break;
+        } else if (strcmp(message, "/file") == 0) {
+            FILE *fp = fopen("./received_files/file1.txt", "w");
+            if (!fp) {
+                perror("File open error");
+                continue;
+            }
 
-		send(sk, message, strlen(message),0);
-		printf("Your message was sent successfully\n");
-
-
-		if(strcmp(message, "/exit") == 0){
-			break;
-		}else if (strcmp(message, "/file") == 0){
-			while(1){
-				message[recv(sk, message, sizeof(message), 0)] = '\0';  // Null-terminate the string
-				
-				if(strcmp(message, "d") == 0){
-					printf("File transfer completed!\n");
+            while (1) {
+                memset(message, 0, sizeof(message));
+                int bytes_received = recv(sk, message, sizeof(message) - 1, 0);
+                if (bytes_received <= 0) {
+                    perror("Receive error");
                     break;
-				} else {
-					writeOnFile(message);
-					printf("Writing a new line to the file...\n");
-				}
-			}
-			printf("File was closed\n");
-		} else {
-			recv(sk, message, sizeof(message), 0);
-			printf("========> %s <========\n", message);
-		}
-	}
+                }
 
-	return 0;
+                message[bytes_received] = '\0';  // Null-terminate the string
+
+                if (strcmp(message, "EOF_SIGNAL") == 0) {
+                    printf("File transfer completed!\n");
+                    break;
+                } else {
+                    fprintf(fp, "%s", message);
+                    printf("Writing data to the file...\n");
+                }
+            }
+
+            fclose(fp);
+            printf("File was closed\n");
+        } else {
+            recv(sk, message, sizeof(message) - 1, 0);
+            message[recv(sk, message, sizeof(message), 0)] = '\0';
+            printf("========> %s <========\n", message);
+        }
+    }
+
+    close(sk);
+    return 0;
 }
 
-void getMenuOptions(){
-	printf("=====================================================\n");
-	printf("Select one of those commands :\n");
-	printf("/file ===========> To get a file.\n");
-	printf("/exit ===========> To exit the session.\n");
-	printf("=====================================================\n");
-}
-
-void writeOnFile(char * message){
-	FILE *fp = fopen("./received_files/file1.txt", "a");
-
-	fprintf(fp, "%s", message);
-
-	fclose(fp);
+void getMenuOptions() {
+    printf("=====================================================\n");
+    printf("Select one of these commands:\n");
+    printf("/file ===========> To get a file.\n");
+    printf("/exit ===========> To exit the session.\n");
+    printf("=====================================================\n");
 }
